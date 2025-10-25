@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Telegram Report Tool</title>
+<style>
+  body {
+    background: radial-gradient(circle at top left, #0f172a, #000);
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+  }
+
+  /* Style for the logo */
+  .logo {
+    width: 150px; /* Adjust size as needed */
+    height: auto;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px #e2e8f0aa; /* Added a subtle glow */
+  }
+
+  .card {
+    background: rgba(15, 23, 42, 0.9);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 25px #0ea5e9aa;
+    width: 380px;
+    backdrop-filter: blur(10px);
+  }
+
+  h2 {
+    text-align: center;
+    color: #22d3ee;
+    text-shadow: 0 0 10px #22d3ee;
+  }
+
+  select, input, button {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 14px;
+  }
+
+  button {
+    background: linear-gradient(90deg, #06b6d4, #0ea5e9, #3b82f6);
+    background-size: 200% auto;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.5s;
+  }
+
+  button:hover {
+    background-position: right center;
+  }
+
+  button:disabled {
+    background: #155e75;
+    cursor: not-allowed;
+  }
+
+  .terminal {
+    background: black;
+    color: #00ff99;
+    font-size: 13px;
+    height: 160px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+    border: 1px solid #00ffcc;
+    box-shadow: 0 0 10px #00ff99aa;
+  }
+
+  .line {
+    animation: flicker 0.2s infinite alternate;
+  }
+
+  @keyframes flicker {
+    from { opacity: 0.8; }
+    to { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<img src="AiO.png" alt="AIO All In One Hacking Training Logo" class="logo"/>
+
+<div class="card">
+  <h2>⚡ Telegram Report Tool ⚡</h2>
+
+  <input id="botToken" placeholder="Enter your Bot Token" />
+  <select id="type">
+    <option value="">Select Type</option>
+    <option value="channel">Telegram Channel</option>
+    <option value="group">Telegram Group</option>
+    <option value="account">Telegram Account</option>
+  </select>
+
+  <input id="username" placeholder="@username" />
+  <input id="postLink" placeholder="Post link (optional)" />
+
+  <select id="reason">
+    <option value="">Select Report Reason</option>
+    <option value="Violence">Violence</option>
+    <option value="Copyright">Copyright</option>
+    <option value="Spam">Spam</option>
+    <option value="Phishing">Phishing</option>
+  </select>
+
+  <button id="reportBtn">🚀 Start Report</button>
+
+  <div class="terminal" id="terminal"></div>
+</div>
+
+<script>
+const terminal = document.getElementById("terminal");
+const btn = document.getElementById("reportBtn");
+
+btn.addEventListener("click", async () => {
+  const botToken = document.getElementById("botToken").value.trim();
+  const type = document.getElementById("type").value;
+  const username = document.getElementById("username").value.trim();
+  const reason = document.getElementById("reason").value;
+  const postLink = document.getElementById("postLink").value.trim();
+
+  if (!botToken || !type || !username || !reason) {
+    terminal.innerHTML = `<span style='color:#ff5555;'>[ERROR]</span> Fill all required fields.<br>`;
+    return;
+  }
+
+  terminal.innerHTML = "";
+  btn.disabled = true;
+  addLine(`[INFO] Connecting to Telegram API...`);
+
+  try {
+    const chatId = username.startsWith('@') ? username : '@' + username;
+    const url = `https://api.telegram.org/bot${botToken}/getChat?chat_id=${chatId}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.ok) {
+      addLine(`[ERROR] Telegram API: ${data.description}`);
+      btn.disabled = false;
+      return;
+    }
+
+    const chat = data.result;
+    const reportData = {
+      name: chat.title || chat.first_name || "N/A",
+      id: chat.id,
+      type: chat.type,
+      username: username,
+      reason: reason,
+      postLink: postLink || "N/A",
+      timestamp: new Date().toISOString(),
+    };
+
+    addLine(`[INFO] Chat info retrieved.`);
+    addLine(`[USER] ${reportData.name} (${reportData.type})`);
+    addLine(`[LINK] ${reportData.postLink}`);
+    addLine(`[ACTION] Preparing report...`);
+
+    const messages = [
+      `[ENCRYPT] Encoding report payload...`,
+      `[UPLOAD] Transmitting report data...`,
+      `[SYSTEM] Target: ${username} | Reason: ${reason}`,
+      `[PROCESS] Running security scan...`,
+      `[COMPLETE] Report uploaded successfully ✅`
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < messages.length) {
+        addLine(messages[i]);
+        i++;
+      } else {
+        clearInterval(interval);
+        btn.disabled = false;
+        addLine(`[EXPORT] Downloading JSON data...`);
+        downloadJSON(reportData);
+      }
+    }, 1000);
+
+  } catch (err) {
+    addLine(`[ERROR] Network or API error.`);
+    btn.disabled = false;
+  }
+});
+
+function addLine(text) {
+  const hackerChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+";
+  let line = "";
+  let idx = 0;
+  const scramble = setInterval(() => {
+    line = text.split("").map((char, i) => {
+      if (i < idx) return char;
+      return hackerChars[Math.floor(Math.random() * hackerChars.length)];
+    }).join("");
+    terminal.innerHTML += `<div class='line'>${line}</div>`;
+    terminal.scrollTop = terminal.scrollHeight;
+    idx++;
+    if (idx > text.length) clearInterval(scramble);
+  }, 20);
+}
+
+function downloadJSON(obj) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `telegram_report_${obj.username.replace("@", "")}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
